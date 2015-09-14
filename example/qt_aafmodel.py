@@ -256,7 +256,9 @@ def aaf_item_model(item):
     model.setVerticalHeaderLabels(keys)
     model.setHorizontalHeaderLabels(['Value'])
     for i, value in enumerate(values):
-        model.setItem(i, 0, QtGui.QStandardItem(value))
+        modelItem = QtGui.QStandardItem(value)
+        modelItem.setEditable(False)
+        model.setItem(i, 0, modelItem)
 
     return model
 
@@ -303,27 +305,28 @@ if __name__ == "__main__":
     #print mobs
 
     app = QtGui.QApplication(sys.argv)
-    splitter = QtGui.QSplitter()
     
     model = AAFModel(root)
     
     tree = QtGui.QTreeView()
-    
     tree.setModel(model)
-    
     tree.expandToDepth(5)
     tree.resizeColumnToContents(0)
 
     table = QtGui.QTableView()
 
+    splitter = QtGui.QSplitter()
     splitter.addWidget(tree)
     splitter.addWidget(table)
+    splitter.setWindowTitle(args[0])
     splitter.resize(700, 600)
     splitter.show()
 
     def onCurrentSelectionChanged(current, previous):
         item = model.getItem(current).item
         table.setModel(aaf_item_model(item))
+        table.resizeColumnsToContents()
+
 
     tree.selectionModel().currentChanged.connect(onCurrentSelectionChanged)
     
