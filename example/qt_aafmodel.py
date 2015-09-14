@@ -1,5 +1,5 @@
 import sys
-from PyQt4 import QtCore
+from PyQt4 import QtCore, QtGui
 
 import aaf
 import aaf.storage
@@ -238,12 +238,30 @@ class AAFModel(QtCore.QAbstractItemModel):
             if item:
                 return item
         return self.rootItem
-        
+
+
+def aaf_item_model(item):
+    if isinstance(item, DummyItem):
+        keys = []
+        values = []
+    elif isinstance(item, basestring):
+        keys = ['']
+        values = [item]
+    else:
+        keys = item.keys()
+        keys.sort()
+        values = [str(item[k].value) for k in keys]
+
+    model = QtGui.QStandardItemModel(len(keys), 1)
+    model.setVerticalHeaderLabels(keys)
+    model.setHorizontalHeaderLabels(['Value'])
+    for i, value in enumerate(values):
+        model.setItem(i, 0, QtGui.QStandardItem(value))
+
+    return model
+
 
 if __name__ == "__main__":
-    
-    from PyQt4 import QtGui
-        
     from optparse import OptionParser
     
     parser = OptionParser()
@@ -285,6 +303,7 @@ if __name__ == "__main__":
     #print mobs
 
     app = QtGui.QApplication(sys.argv)
+    splitter = QtGui.QSplitter()
     
     model = AAFModel(root)
     
@@ -292,9 +311,20 @@ if __name__ == "__main__":
     
     tree.setModel(model)
     
-    tree.resize(700,600)
     tree.expandToDepth(5)
     tree.resizeColumnToContents(0)
-    tree.show()
+
+    table = QtGui.QTableView()
+
+    splitter.addWidget(tree)
+    splitter.addWidget(table)
+    splitter.resize(700, 600)
+    splitter.show()
+
+    def onCurrentSelectionChanged(current, previous):
+        item = model.getItem(current).item
+        table.setModel(aaf_item_model(item))
+
+    tree.selectionModel().currentChanged.connect(onCurrentSelectionChanged)
     
     sys.exit(app.exec_())
